@@ -3,9 +3,11 @@ from .osc import OperationalSpaceController
 from .joint_pos import JointPositionController
 from .joint_vel import JointVelocityController
 from .joint_tor import JointTorqueController
+from .test_ind_joint import TestIndependentJointContoller
 
 
 CONTROLLER_INFO = {
+    "TEST_IND_JOINT": "Test Independent Joint Control",
     "JOINT_VELOCITY": "Joint Velocity",
     "JOINT_TORQUE": "Joint Torque",
     "JOINT_POSITION": "Joint Position",

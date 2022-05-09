@@ -12,6 +12,7 @@ from .joint_pos import JointPositionController
 from .joint_tor import JointTorqueController
 from .joint_vel import JointVelocityController
 from .osc import OperationalSpaceController
+from .test_ind_joint import TestIndependentJointContoller
 
 # Global var for linking pybullet server to multiple ik controller instances if necessary
 pybullet_server = None
@@ -164,5 +165,8 @@ def controller_factory(name, params):
 
     if name == "JOINT_TORQUE":
         return JointTorqueController(interpolator=interpolator, **params)
+
+    if name == "TEST_IND_JOINT":
+        return TestIndependentJointContoller(interpolator=interpolator, **params)
 
     raise ValueError("Unknown controller name: {}".format(name))

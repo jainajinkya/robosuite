@@ -504,6 +504,7 @@ class InverseKinematicsController(JointVelocityController):
             arm_joint_pos = self.inverse_kinematics(world_targets[0], world_targets[1])
             self.sync_ik_robot(arm_joint_pos, sync_last=True)
 
+        print(arm_joint_pos)
         return arm_joint_pos
 
     def bullet_base_pose_to_world_pose(self, pose_in_base):

@@ -238,6 +238,8 @@ if __name__ == "__main__":
                 # We're in an environment with no gripper action space, so trim the action space to be the action dim
                 action = action[: env.action_dim]
 
+            print(f"{action},")
+
             # Step through the simulation and render
             obs, reward, done, info = env.step(action)
             env.render()
