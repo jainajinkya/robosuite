@@ -7,7 +7,7 @@ from robosuite.utils.control_utils import *
 IMPEDANCE_MODES = {"fixed", "variable", "variable_kp"}
 
 
-class TestIndependentJointContoller(Controller):
+class ComputedTorqueJointContoller(Controller):
     """
     Controller for controlling robot arm via impedance control. Allows position control of the robot's joints.
 
@@ -93,6 +93,8 @@ class TestIndependentJointContoller(Controller):
         input_min=-1,
         output_max=0.05,
         output_min=-0.05,
+        kp=50,
+        damping_ratio=1,
         impedance_mode="fixed",
         policy_freq=20,
         qpos_limits=None,
@@ -134,12 +136,52 @@ class TestIndependentJointContoller(Controller):
         # Data logging
         self.applied_controls = []
 
+        # Control gains
+        self.kp = self.nums2array(
+            kp, self.control_dim
+        )  # Kp = \omega^2 * J, where J := Mass matrix (Multipled later as J is a function of qpos, which is time dependent.
+        self.kd = (
+            2 * np.sqrt(self.kp) * damping_ratio
+        )  # Kd = 2 * damping_ratio * \omega * J - B, where \omega = sqrt(Kp / J) and B = 0.
+
     def set_goal(self, action, set_qpos=None):
-        pass
+        self.update()
+
+        self.goal_qpos = set_goal_position(
+            delta=action, current_position=self.joint_pos, position_limit=self.position_limits, set_pos=set_qpos
+        )
+
+        if self.interpolator is not None:
+            self.interpolator.set_goal(self.goal_qpos)
 
     def run_controller(self):
-        # Return desired torques plus gravity compensations
-        self.torques = -1 * np.ones(self.control_dim)
+        # Make sure goal has been set
+        if self.goal_qpos is None:
+            self.set_goal(np.zeros(self.control_dim))
+
+        # Update state
+        self.update()
+
+        desired_qpos = None
+
+        # Only linear interpolator is currently supported
+        if self.interpolator is not None:
+            # Linear case
+            if self.interpolator.order == 1:
+                desired_qpos = self.interpolator.get_interpolated_goal()
+            else:
+                # Nonlinear case not currently supported
+                pass
+        else:
+            desired_qpos = np.array(self.goal_qpos)
+
+        position_error = desired_qpos - self.joint_pos
+        vel_pos_error = -self.joint_vel  # Assume desired_qvel = 0
+        desired_torque = np.multiply(np.array(position_error), np.array(self.kp)) + np.multiply(vel_pos_error, self.kd)
+
+        # TODO: For feed-froward control need to add velocity as we/l
+        self.torques = np.dot(self.mass_matrix, desired_torque) + self.torque_compensation
+        # Ideally, we should have used kd = sqrt(kp * J), but we can simplify over calculations a bit by just mutliplying with mass matrix. However, note that this system may no longer be critically damped, rather over-damped.
 
         # Always run superclass call for any cleanups at the end
         super().run_controller()
@@ -150,7 +192,14 @@ class TestIndependentJointContoller(Controller):
         return self.torques
 
     def reset_goal(self):
-        pass
+        """
+        Resets joint position goal to be current position
+        """
+        self.goal_qpos = self.joint_pos
+
+        # Reset interpolator if required
+        if self.interpolator is not None:
+            self.interpolator.set_goal(self.goal_qpos)
 
     @property
     def control_limits(self):
@@ -180,4 +229,4 @@ class TestIndependentJointContoller(Controller):
 
     @property
     def name(self):
-        return "TEST_IND_JOINT"
+        return "COMPUTED_TORQUE"

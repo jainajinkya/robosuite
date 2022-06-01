@@ -1,6 +1,5 @@
 from robosuite.controllers import load_controller_config
 from robosuite.utils.input_utils import *
-from robosuite.controllers.test_ind_joint import TestIndependentJointContoller
 
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -298,7 +297,7 @@ if __name__ == "__main__":
     #     options["robots"] = choose_robots(exclude_bimanual=True)
 
     # Choose controller
-    controller_name = "TEST_IND_JOINT"  # choose_controller()
+    controller_name = choose_controller()  # COMPUTED_TORQUE
 
     # Load the desired controller
     options["controller_configs"] = load_controller_config(default_controller=controller_name)

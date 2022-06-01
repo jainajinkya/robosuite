@@ -1,5 +1,5 @@
 {
-  "type": "TEST_IND_JOINT",
+  "type": "COMPUTED_TORQUE",
   "input_max": 1,
   "input_min": -1,
   "output_max": 0.05,
