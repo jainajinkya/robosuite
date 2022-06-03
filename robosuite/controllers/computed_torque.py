@@ -163,12 +163,16 @@ class ComputedTorqueJointContoller(Controller):
         self.update()
 
         desired_qpos = None
+        desired_qvel = np.zeros(self.control_dim)
+        desired_qacc = np.zeros(self.control_dim)
 
         # Only linear interpolator is currently supported
         if self.interpolator is not None:
             # Linear case
             if self.interpolator.order == 1:
                 desired_qpos = self.interpolator.get_interpolated_goal()
+            elif self.interpolator.order == 3:
+                desired_qpos, desired_qvel, desired_qacc = self.interpolator.get_interpolated_goal()
             else:
                 # Nonlinear case not currently supported
                 pass
@@ -176,11 +180,20 @@ class ComputedTorqueJointContoller(Controller):
             desired_qpos = np.array(self.goal_qpos)
 
         position_error = desired_qpos - self.joint_pos
-        vel_pos_error = -self.joint_vel  # Assume desired_qvel = 0
+        vel_pos_error = desired_qvel - self.joint_vel
+
+        # This is u_pid / J_eff
         desired_torque = np.multiply(np.array(position_error), np.array(self.kp)) + np.multiply(vel_pos_error, self.kd)
 
-        # TODO: For feed-froward control need to add velocity as we/l
-        self.torques = np.dot(self.mass_matrix, desired_torque) + self.torque_compensation
+        # This is u_pid + u_{feed_forward} + u_{feed-forward computed torque}
+        # For this particular use-case u_{feed_forward} is 0, as desired_qacc and desired_qvel are 0.
+        # TODO: Need to create a test case where these are non-zero and we have an interpolator.
+
+        self.torques = (
+            np.dot(self.mass_matrix, desired_torque)  # u_pid
+            + np.dot(self.mass_matrix, desired_qacc)  # u_feed_forward
+            + self.torque_compensation  # computed torque
+        )
         # Ideally, we should have used kd = sqrt(kp * J), but we can simplify over calculations a bit by just mutliplying with mass matrix. However, note that this system may no longer be critically damped, rather over-damped.
 
         # Always run superclass call for any cleanups at the end

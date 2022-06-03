@@ -16,6 +16,6 @@
     10
   ],
   "qpos_limits": null,
-  "interpolation": null,
+  "interpolation": "cubic",
   "ramp_ratio": 0.2
 }

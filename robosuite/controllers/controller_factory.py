@@ -8,6 +8,7 @@ from copy import deepcopy
 import numpy as np
 
 from .interpolators.linear_interpolator import LinearInterpolator
+from .interpolators.cubic_interpolator import CubicInterpolator
 from .joint_pos import JointPositionController
 from .joint_tor import JointTorqueController
 from .joint_vel import JointVelocityController
@@ -114,6 +115,13 @@ def controller_factory(name, params):
     interpolator = None
     if params["interpolation"] == "linear":
         interpolator = LinearInterpolator(
+            ndim=params["ndim"],
+            controller_freq=(1 / params["sim"].model.opt.timestep),
+            policy_freq=params["policy_freq"],
+            ramp_ratio=params["ramp_ratio"],
+        )
+    if params["interpolation"] == "cubic":
+        interpolator = CubicInterpolator(
             ndim=params["ndim"],
             controller_freq=(1 / params["sim"].model.opt.timestep),
             policy_freq=params["policy_freq"],
